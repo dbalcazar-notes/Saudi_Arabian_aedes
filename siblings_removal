@@ -1,0 +1,94 @@
+#using VCFtools v0.1.16
+
+vcftools --vcf input.vcf --relatedness2 --out input ##the input file shouldnot be filtered by LD
+
+#Then, in R, I used this script to detect siblings based on a relatedness threshold of 0.177, which was used to remove first-degree relatives. But the threshold may be modified according to your analysis. 
+
+library(dplyr)
+library(ggplot2)
+library(reshape2)
+
+df <- read.table("input.relatedness2", header = TRUE, sep = '\t', dec = '.')
+df_relevant <- df[, c("INDV1", "INDV2", "RELATEDNESS_PHI")]
+df_sym <- rbind(
+  df_relevant,
+  data.frame(
+    INDV1 = df_relevant$INDV2,
+    INDV2 = df_relevant$INDV1,
+    RELATEDNESS_PHI = df_relevant$RELATEDNESS_PHI
+  )
+)
+
+matriz <- acast(df_sym, INDV1 ~ INDV2, value.var = "RELATEDNESS_PHI", fill = 0, fun.aggregate = mean)
+
+####################################################################################################################################################################################
+editar_matriz <- function(matriz) {
+  matriz_editada <- matriz
+    matriz_editada[matriz < 0.5 & matriz >= 0.177] <- "TRUE" ##here is the threshold to be set
+    return(matriz_editada)
+}
+matriz_editada <- editar_matriz(matriz)
+####################################################################################################################################################################################
+matriz_editada[upper.tri(matriz_editada)] <- NA
+eliminar_fila_columna_por_true <- function(matriz) {
+  nombres_a_eliminar <- rownames(matriz)[apply(matriz, 1, function(x) any(x == "TRUE"))]
+  if(length(nombres_a_eliminar) == 0) {
+    return(matriz)
+  }
+  matriz_sin_true <- matriz[!rownames(matriz) %in% nombres_a_eliminar, 
+                            !colnames(matriz) %in% nombres_a_eliminar, 
+                            drop = FALSE]
+  
+  return(matriz_sin_true)
+}
+matrices_sin_true <- eliminar_fila_columna_por_true(matriz_editada)
+#########################################################################################################################################################################################
+obtener_filas_conservadas <- function(matriz) {
+  nombres_conservados <- rownames(matriz)
+  return(nombres_conservados)
+}
+filas_conservadas <- as.data.frame(obtener_filas_conservadas(matrices_sin_true))
+write.table(filas_conservadas, file = "non_siblings_onlynon-related.csv", sep = ",", row.names = FALSE, col.names = FALSE, quote = FALSE)
+#########################################################################################################################################################################################
+#For plotting Phi values according to the relationship between the samples
+df_filtrado <- df_relevant %>% filter(INDV1 != INDV2)
+
+df_filtrado <- df_filtrado %>%
+  mutate(relation = case_when(
+    RELATEDNESS_PHI >= 0.354 ~ "duplicate/MZ twin",
+    RELATEDNESS_PHI >= 0.177 & RELATEDNESS_PHI < 0.354 ~ "1st-degree",
+    RELATEDNESS_PHI >= 0.0884 & RELATEDNESS_PHI < 0.177 ~ "2nd-degree",
+    RELATEDNESS_PHI >= 0.0442 & RELATEDNESS_PHI < 0.0884 ~ "3rd-degree",
+    RELATEDNESS_PHI < 0.0442 ~ "non_related",
+    TRUE ~ NA_character_ 
+  ))
+
+df_filtrado <- df_filtrado %>%
+  mutate(relation = factor(relation, levels = c("duplicate/MZ twin", "1st-degree", "2nd-degree", "3rd-degree", "non_related")))
+write.table(df_filtrado, "tabla_results_siblings.txt", row.names = F, quote = T)
+
+ggplot(df_filtrado, aes(x = relation, y = RELATEDNESS_PHI, color = relation)) +
+  geom_point(alpha = 0.7, size = 3) +  # Agregar puntos con transparencia y tamaño
+  labs(
+    title = "Relatedness_phi vs Relation",
+    x = "Relation",
+    y = "Relatedness_phi"
+  ) +
+  #theme_minimal() +  # Tema limpio
+  scale_color_brewer(palette = "Set3") +  # Paleta de colores personalizada 
+  ylim(min(df_filtrado$RELATEDNESS_PHI)-0.5, 0.6) +
+  theme(plot.title = element_text(hjust = 0.5)) +
+  theme(legend.position = "top",
+        axis.text = element_text(size = 10),
+        axis.title = element_text(size = 15),
+        axis.ticks.x = element_line(size = 1),
+        axis.ticks.y = element_line(size = 1),
+        axis.line.x.bottom = element_line(size = 0.5, colour = "black"),
+        axis.line.y.left = element_line(size = 0.5, colour = "black"),
+        panel.background = element_rect(fill = NA),
+        panel.grid = element_blank(),
+        panel.grid.minor = element_blank())
+
+ggsave("kingship_LATB_nonsibs.pdf", width = 5, height = 4)
+
+dev.off()
