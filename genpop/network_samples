@@ -1,0 +1,55 @@
+#using plink
+plink --file input --aec --keep-allele-order --distance square 1-ibs flat-missing --out matrix_output
+
+##in R
+library(netviewr)
+library(dplyr)
+library(RColorBrewer)
+library(ggplot2)
+
+rm(list=ls())
+
+dist <- read.csv("matrix_output.mdist", header = FALSE, sep = '\t', dec = ".")
+dist <- as.matrix(dist)
+
+node_data <- read.table("pop.txt", header = FALSE, sep = "", col.names = c("pop", "sample"))
+
+l <- dist %>% netview(k=1:87) %@%
+  community(method=c('infomap', 'fast_greedy')) %>%
+  plot_kselect()
+
+ls <- as.data.frame(l$data)
+
+pdf("bestK_network.pdf")
+ggplot(ls, aes (x= k, y = Communities, color = Method)) +
+  geom_line(size = 2) +
+  theme_minimal() +
+  theme(legend.position = "top",
+        axis.text = element_text(size = 10),
+        axis.title = element_text(size = 15),
+        axis.ticks.x = element_line(linewidth = 1),
+        axis.ticks.y = element_line(linewidth = 1),
+        axis.line.x.bottom = element_line(linewidth = 0.5, colour = "black"),
+        axis.line.y.left = element_line(linewidth = 0.5, colour = "black"),
+        panel.background = element_rect(fill = NA),
+        panel.grid = element_blank(),
+        panel.grid.minor = element_blank()) +
+  labs(x = "K value", y = "Communities", title = "Best K ARS_only") +
+  theme(plot.title = element_text(hjust = 0.5))
+dev.off()
+
+write.csv(ls, file = "best_k.csv", quote = FALSE, row.names = FALSE)
+
+mycolors=c(brewer.pal(name="Dark2", n=8), brewer.pal(name="Paired", n=12), brewer.pal(name="Set1", n=9), brewer.pal(name="Set2", n=8), brewer.pal(name="Pastel1", n=9), brewer.pal(name="Pastel2", n=8), brewer.pal(name="Set3", n=12))
+
+g <- dist %>% netview(k=80, mutual = T, mst = F, weights = F) %@% node_data %@%
+  node_color(data="pop", palette = brewer.pal(name="Set3", n=12), color=NULL, opacity=10, n_color = NULL) %@%
+  node_size(data=NULL, size=25) %@%
+  #node_label(data="pop", label=NA, size=0.6, color='black', family='serif', font=4, dist=0) %@%
+  community(method='infomap', polygon=TRUE, palette='PuBuGn', opacity=1, border=20, n_color=NULL)
+
+g %>% plot_netview(legend= "pop", nrow=1, ncol=1, text = "Ae. aegypti", text_size = 1.25, legend_size = 0.75, text_font = 2, legend_position = 1)
+
+pdf("kNN_k80.pdf", width = 8, height = 6)  
+g %>% plot_netview(legend= "pop", nrow=1, ncol=1, text = "Ae. aegypti", text_size = 0.5, legend_size = 0.75, text_font = 2, legend_position = 1)
+dev.off()
