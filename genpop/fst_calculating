@@ -1,0 +1,27 @@
+library(pinfsc50)
+library(vcfR)
+library(pegas)
+library(StAMPP)
+library(adegenet)
+
+rm(list=ls())
+
+vcf<-read.vcfR("input.vcf", verbose = TRUE, limit  = 10000000000)
+x <- vcfR2genlight(vcf) 
+x2 <- as.matrix(x)
+sample <- row.names(x2)
+pop.names <- c() # A vector containing the names of the populations, in the same order as they appear in the VCF file
+
+ploidy <- ploidy(x)
+x2 = x2 * (1/ploidy)
+x2[is.na(x2)] = NaN 
+format <- vector(length = length(sample))
+format[1:length(format)] = "freq" 
+x.stampp <- as.data.frame(cbind(sample, pop.names, ploidy, format, x2))
+geno <- stamppConvert(x.stampp, 'r') 
+fst <- stamppFst(geno)
+save.image(file = "Fst.RData")
+write.table(fst["Fsts"], file = "Fst.txt")
+write.table(fst["Pvalues"], file = "Fst__pvalues.txt")
+write.table(fst["Bootstraps"], file = "Fst_boots.txt")
+
