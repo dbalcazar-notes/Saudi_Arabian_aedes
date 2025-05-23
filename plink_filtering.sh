@@ -4,7 +4,7 @@
 #SBATCH --mem-per-cpu 4G
 #SBATCH --cpus-per-task 1
 #SBATCH --partition day
-#SBATCH -t 10:00
+#SBATCH -t 5:00
 #SBATCH --mail-type ALL
 #SBATCH --mail-user db2533@yale.edu
 
