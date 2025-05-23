@@ -1,0 +1,32 @@
+#!/bin/bash
+#SBATCH --job-name admix
+#SBATCH --partition day
+#SBATCH --cpus-per-task 8
+#SBATCH --mem-per-cpu 1g --time 23:00:00
+
+#to get the raw ped, the original map/ped file should be converted using:
+# plink --file input --aec --keep-allele-order --recode 12 --out output_raw
+
+module load miniconda
+conda activate admixture
+
+cd /path/to/file
+mkdir -p run_{01..10}
+
+# Definir la ruta base
+base_path="/path/to/file"
+
+# Iterar sobre las carpetas de ejecución
+for run in {01..10}; do
+    # Cambiar al directorio de la iteración actual
+    cd "${base_path}/run_${run}/"
+    
+    # Ejecutar admixture para diferentes valores de K
+    for K in {1..10}; do
+        admixture -s time --cv "${base_path}/output_raw.ped" $K -j$SLURM_CPUS_PER_TASK | tee "log${K}.out"
+    done
+
+    # Recolectar resultados
+    grep -h CV log*.out > SAU_${run}.txt
+
+done
