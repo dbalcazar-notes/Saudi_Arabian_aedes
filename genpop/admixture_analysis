@@ -30,3 +30,6 @@ for run in {01..10}; do
     grep -h CV log*.out > SAU_${run}.txt
 
 done
+
+
+#Once completed, the Q output files were analyzed using the Clumpak software available at https://clumpak.tau.ac.il/.
