@@ -1,0 +1,40 @@
+#plink V1.9
+plink --file input --aec --keep-allele-order --pca --missing --out output
+
+#In R,
+rm(list=ls())
+library(ggplot2)
+library(RColorBrewer)
+
+options(scipen = 999)
+
+mycolors=c(brewer.pal(name="Paired", n=12), brewer.pal(name="Dark2", n=8), brewer.pal(name="Set1", n=9), brewer.pal(name="Set2", n=8), brewer.pal(name="Pastel1", n=9), brewer.pal(name="Pastel2", n=8), brewer.pal(name="Set3", n=12))
+pca1 = read.table("plink.eigenvec",header=F)
+eigenval = scan("plink.eigenval")
+eigenval <- na.omit(eigenval)  
+pve = eigenval/sum(eigenval)*100
+
+pops <- read.delim("pop.txt", header = FALSE, sep = "\t", col.names = c("type", "pops", "samples"))
+pca_merge <- merge(pops, pca1, by.x = "samples", by.y = "V2", all = F)
+
+#Adjust the values for x and y to plot PC1, PC2, PC3, etc., according to your analysis.
+pdf("PCA_output.pdf", width=5, height=4)
+ggplot(data=pca_merge, aes(x=V3, y=V4, color = type)) + 
+  geom_vline(xintercept = 0, linetype = "dashed", color = "gray") +
+  geom_hline(yintercept = 0, linetype = "dashed", color = "gray") +
+  geom_point(size = 4) +
+  scale_color_manual(values = mycolors) +
+  xlab(paste0("PC2 (", signif(pve[2], 3), "%)")) +
+  ylab(paste0("PC3 (", signif(pve[3], 3), "%)")) +
+  theme_minimal() +
+  theme(
+    legend.title = element_blank(), 
+    legend.key.size = unit(0.5, "cm"),
+    legend.text = element_text(size = 8),
+    axis.line = element_line(size = 0.8, color = "black"),
+    axis.ticks = element_line(size = 0.8, color = "black"),
+    panel.grid.minor = element_blank(),
+    panel.grid.major = element_blank()
+  )
+
+dev.off()
