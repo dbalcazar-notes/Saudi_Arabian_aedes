@@ -26,3 +26,39 @@ for K in {1..100}
         do
         treemix -i nr_treemix.frq.gz -global -bootstrap -o bootstrap/nr_treemix_Boot$K
         done
+
+#For plotting the results, I used the R script found here: https://bitbucket.org/nygcresearch/treemix/src/master/src; and the following instructions
+
+library(RColorBrewer)
+library(R.utils)
+rm(list=ls())
+setwd('path/to/dir')
+
+source('plotting_funcs.R', chdir = TRUE)
+
+pdf("input_TargetTree.pdf")
+par(mfrow=c(1,1))
+plot_tree("result/nr_treemix_TargetTree",cex=0.4) 
+dev.off()
+
+pdf("input_Tree_resids.pdf", width = 10, height = 15)
+par(mar=c(4, 5, 5, 2), oma=c(2, 2, 2, 2))  # 
+par(mfrow=c(3,2))
+for (mig in 0:5) {
+  file_name <- paste0("migration/nr_treemix_out_mig", mig)
+  plot_resid(file_name, "pop.txt", cex=0.5) #pop.txt is a file containing the name of the clusters or family-ID, one per line
+  title(main = paste("Mig:", mig))
+}
+dev.off()
+
+pdf("input_migration.pdf", width = 8, height = 10)
+par(mar=c(5, 3, 2, 2), oma=c(1, 1, 0, 2))
+par(mfrow=c(3,2))
+for(edge in 0:5){
+plot_tree(cex=0.5, paste0("migration/nr_treemix_out_mig",edge))
+ title(paste(edge,"edges"))
+ }
+dev.off()
+
+
+
