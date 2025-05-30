@@ -1,0 +1,28 @@
+#The input file was generated with the following steps and using the previous input files:
+plink --file input --set-missing-var-ids @:#[AAGL5] --allow-extra-chr --allow-no-sex --make-bed --recode --out input_ID
+plink --file input_ID --geno 0.1  --allow-extra-chr --keep-allele-order --allow-no-sex --recode --out input_ID_geno90 #missing data impairs the treemix analysis. They should be reduced
+plink --file input --freq --missing --allow-extra-chr --allow-no-sex --keep-allele-order --within cluster.txt --out nr_treemix #--family may also be used instead of --within to use the family ID as a facor for clustering 
+
+#then
+gzip nr_treemix.frq.strat
+
+#then
+module load Python/2.7.18-GCCcore-10.2.0
+python plink2treemix.py nr_treemix.frq.strat.gz nr_treemix.frq.gz #the python script can be fopund here: https://github.com/thomnelson/tools/tree/master
+
+#Finally
+module load TreeMix/1.13-GCC-10.2.0
+#running without migration events
+treemix -i nr_treemix.frq.gz -global -o results/nr_treemix_TargetTree
+
+#run with migration events
+for K in {0..10}
+        do
+        treemix -i nr_treemix.frq.gz -global -m $K -o migration/nr_treemix_out_mig$K > migration/treemix_nr_${K}_log
+        done
+
+#bootstrap without windows
+for K in {1..100}
+        do
+        treemix -i nr_treemix.frq.gz -global -bootstrap -o bootstrap/nr_treemix_Boot$K
+        done
