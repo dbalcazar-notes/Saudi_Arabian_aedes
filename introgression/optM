@@ -1,0 +1,30 @@
+#This script is based on author suggestions, to select the best number of pulses estimated by TreeMix
+
+module load TreeMix/1.13-GCC-10.2.0
+for m in {1..10}; do
+    for i in {1..10}; do
+        # Generate random seed
+        s=$RANDOM
+        treemix -i nr_treemix.frq.gz -o nr_treemix.frq.${i}.${m} -global -m ${m} -k 500 -seed ${s}
+    done
+done
+
+#Then in R:
+library(OptM)
+
+rm(list=ls())
+setwd("/path/to/dir/")
+
+folder <- "/path/to/dir/"
+
+test.optM <- optM(
+  folder,
+  orientagraph = F,
+  tsv = "output_optM.tsv" ,
+  method = "Evanno",
+  ignore = c(0,10),
+  thresh = 0.05
+)
+
+
+plot_optM(test.optM, method = "Evanno", pdf = "output.pdf")
