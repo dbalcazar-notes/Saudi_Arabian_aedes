@@ -1,0 +1,9 @@
+#The binary were downloaded from https://github.com/diyabc/diyabc for DIYABC, and https://github.com/diyabc/abcranger for ABCRANGER
+
+#training dataset
+diyabc-RF-linux-v1.1.27 -p output/ -n t:8
+diyabc-RF-linux-v1.1.27 -p output/ -m -R ALL -t 8 -g 100 -r 100000
+
+#model evaluation
+abcranger-linux-v1.16.44 -n 0 -t 100000 -j 8 -c 5
+
