@@ -1,0 +1,3 @@
+module load TreeMix/1.13-GCC-10.2.0; threepop -i /vast/palmer/pi/powell/DB_upload/Chip/SAU_V2/world/pop/nr_treemix.frq.gz -k 500 > /vast/palmer/pi/powell/DB_upload/Chip/SAU_V2/world/pop/3pop_results_V2.txt
+
+module load TreeMix/1.13-GCC-10.2.0; fourpop  -i /vast/palmer/pi/powell/DB_upload/Chip/SAU_V2/world/pop/nr_treemix.frq.gz -k 500 > /vast/palmer/pi/powell/DB_upload/Chip/SAU_V2/world/pop/4pop_results_V2.txt
