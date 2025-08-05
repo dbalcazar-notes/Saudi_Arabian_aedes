@@ -1,0 +1,9 @@
+#The inputfile was generated with the instructions in https://github.com/brannala/ugnix/wiki/VCF-to-BA3-File-Conversion.
+
+#First, VCF file was converted to compressed vcf and indexed.
+tabix input.vcf.gz
+bcf2ba3 input.vcf.gz > input.ba3
+poptrans input.pop input.ba3 > input_pops.ba3 (Where input.pop is a file with the first column as individual IDs (IND) and the second column, tab-separated, as population IDs (POP))
+
+#Then, BA3 software was run using 3 times with different seed (-s):
+BA3SNP -v -i 100000000 -b 10000000 -n 1000 -s 200 -m 0.3 -a 0.6 -f 0.05 -o output_BA3.txt -t -u input_pops.ba3
