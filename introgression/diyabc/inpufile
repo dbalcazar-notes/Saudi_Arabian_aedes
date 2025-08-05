@@ -1,0 +1,10 @@
+#To generate the input file, a VCF was created by selecting only the samples from the population of interests (using plink and one file "samples.txt" with the family and sample names to be retained).
+plink --file input --allow-extra-chr --keep-allele-order --keep samples.txt --recode vcf-iid --out output_vcf
+
+#To control the effect of missing data, it should be reduced
+vcftools --vcf output_vcf --max-missing-count 6 --recode --recode-INFO-all --out output_vcf_nomiss
+
+#Convert vcf to snp input file using the python script in github.com/loire/vcf2DIYABC.py
+module load Python/2.7.18-GCCcore-10.2.0
+python vcf2diyabc.py
+then, specify the vcf file and a pop file (first column: sample ID; second column = 9 (to specify sex is undetermined); third column: population name))
